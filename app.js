@@ -7,6 +7,7 @@ var bodyParser = require('body-parser');
 var partials = require('express-partials');
 var routes = require('./routes/index');
 var methodOverride = require('method-override');
+var session = require('express-session');
 
 var app = express();
 
@@ -19,10 +20,29 @@ app.set('view engine', 'ejs');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
-app.use(cookieParser());
+app.use(cookieParser('Quiz FTM'));
+app.use(session());
+
 app.use(methodOverride('_method'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(partials());
+
+// Helpers dinamicos:
+app.use(function(req, res, next) {
+
+  // si no existe lo inicializa
+  if (!req.session.redir) {
+    req.session.redir = '/';
+  }
+  // guardar path en session.redir para despues de login
+  if (!req.path.match(/\/login|\/logout|\/user/)) {
+    req.session.redir = req.path;
+  }
+
+  // Hacer visible req.session en las vistas
+  res.locals.session = req.session;
+  next();
+});
 
 app.use('/', routes);
 
@@ -58,6 +78,5 @@ app.use(function(err, req, res, next) {
         errors: []
     });
 });
-
 
 module.exports = app;
